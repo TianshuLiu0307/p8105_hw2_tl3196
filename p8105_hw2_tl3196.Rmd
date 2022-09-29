@@ -5,3 +5,100 @@ date: "2022-09-28"
 output: github_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, collapse = FALSE, warning = FALSE)
+options(tibble.print_max = 10)
+options(tibble.width = Inf)
+```
+
+## Problem 1
+```{r subway_station}
+library(tidyverse)
+sub_stat_df = 
+  read_csv('data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv') %>%
+  janitor::clean_names() %>%
+  mutate(
+    entry = recode(entry, 'YES' = TRUE, 'NO' = FALSE)
+  ) %>%
+  select(line:entry, vending, ada)
+
+sub_stat_df
+```
+
+There are ``r nrow(sub_stat_df)`` × ``r ncol(sub_stat_df)`` data in the dataset. 
+
+The variables contains ``r colnames(sub_stat_df)``.
+
+This dataset is not tidy.
+
+```{r cal_dist, include=FALSE}
+num_stat = nrow(
+  sub_stat_df %>% 
+    distinct(station_name, line)
+)
+
+num_ada = nrow(
+  sub_stat_df %>%
+    distinct(line, station_name, ada) %>% 
+    filter(ada == TRUE)
+)
+
+prop_no_vend = nrow(
+  sub_stat_df %>%
+    filter(vending == 'NO')
+) / nrow(sub_stat_df)
+```
+
+
+There are ``r num_stat`` subway stations in NY, 
+``r num_ada`` of which are ADA compliant.
+
+``r prop_no_vend*100`` % of the station entrances / exits don't allow vending.
+
+
+## Problem 2
+
+```{r import&clean_trash_data}
+library(readxl)
+mr_trash_whl = read_excel(
+  "./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx",
+  sheet = 1,
+  range = cell_cols("A:N"),
+  skip = 1,
+  na = ""
+  ) %>%
+  janitor::clean_names() %>%
+  drop_na() %>%
+  mutate(
+    sports_balls = as.integer(sports_balls)
+  )
+
+prof_trash_whl = read_excel(
+  "./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx",
+  sheet = 2,
+  range = cell_cols("A:N"),
+  skip = 1,
+  na = ""
+  ) %>%
+  janitor::clean_names() %>%
+  drop_na() %>%
+  mutate(
+    sports_balls = as.integer(sports_balls)
+  )
+```
+
+```{r combine_df}
+trash_whl = merge(
+  mr_trash_whl %>% 
+    mutate(
+      trash_wheel = "mr_trash_wheel"
+    ), 
+  prof_trash_whl %>% 
+    mutate(
+      trash_wheel = "prof_trash_wheel"
+    ), 
+  all = TRUE)
+
+trash_whl  
+```
+

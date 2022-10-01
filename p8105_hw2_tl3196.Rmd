@@ -7,8 +7,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, collapse = FALSE, warning = FALSE)
-options(tibble.print_max = 10)
-options(tibble.width = Inf)
+options(tibble.print_min = 10)
 ```
 
 ## Problem 1
@@ -88,7 +87,7 @@ prof_trash_whl = read_excel(
 ```
 
 ```{r combine_df}
-trash_whl = merge(
+trash_whl = rbind(
   mr_trash_whl %>% 
     mutate(
       trash_wheel = "mr_trash_wheel"
@@ -96,9 +95,12 @@ trash_whl = merge(
   prof_trash_whl %>% 
     mutate(
       trash_wheel = "prof_trash_wheel"
-    ), 
-  all = TRUE)
+    )
+  ) %>%
+  relocate(trash_wheel)
 
-trash_whl  
+trash_whl
 ```
+
+The combined dataset is ``r nrow(trash_whl)``×``r ncol(trash_whl)``.
 

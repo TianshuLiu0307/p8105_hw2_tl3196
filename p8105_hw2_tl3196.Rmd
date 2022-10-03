@@ -1,7 +1,6 @@
 ---
 title: "p8105_hw2_tl3196"
 author: "Tianshu Liu"
-date: "2022-09-28"
 output: github_document
 ---
 
@@ -11,10 +10,12 @@ options(tibble.print_min = 10)
 ```
 
 ## Problem 1
+
 ```{r subway_station}
 library(tidyverse)
 sub_stat_df = 
-  read_csv('data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv') %>%
+  read_csv('data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv',
+  col_types = cols(Route8 = "c", Route9 = "c", Route10 = "c", Route11 = "c")) %>%
   janitor::clean_names() %>%
   mutate(
     entry = recode(entry, 'YES' = TRUE, 'NO' = FALSE)
@@ -24,36 +25,56 @@ sub_stat_df =
 sub_stat_df
 ```
 
-There are ``r nrow(sub_stat_df)`` × ``r ncol(sub_stat_df)`` data in the dataset. 
+There are `r nrow(sub_stat_df)` × `r ncol(sub_stat_df)` data in the dataset.
 
-The variables contains ``r colnames(sub_stat_df)``.
+The variables contains `r colnames(sub_stat_df)`.
 
 This dataset is not tidy.
 
 ```{r cal_dist, include=FALSE}
+# calculate distinct stations
 num_stat = nrow(
   sub_stat_df %>% 
     distinct(station_name, line)
 )
 
+# calculate distinct stations with ADA
 num_ada = nrow(
   sub_stat_df %>%
     distinct(line, station_name, ada) %>% 
     filter(ada == TRUE)
 )
 
-prop_no_vend = nrow(
-  sub_stat_df %>%
-    filter(vending == 'NO')
-) / nrow(sub_stat_df)
+# calculate proportion of entrances/exits without vending allow entrance
+prop_no_vend = nrow(sub_stat_df %>%
+  filter(vending == "NO", entry == "TRUE")
+) / nrow(sub_stat_df %>%
+  filter(vending == "NO")
+)
 ```
 
+There are `r num_stat` subway stations in NY, `r num_ada` of which are ADA compliant.
 
-There are ``r num_stat`` subway stations in NY, 
-``r num_ada`` of which are ADA compliant.
+`r prop_no_vend*100` % of the station entrances / exits without vending allow entrance.
 
-``r prop_no_vend*100`` % of the station entrances / exits don't allow vending.
+```{r clean_sub_data}
+# clean data with pivot_longer function
+clean_sub_stat_df = sub_stat_df %>% 
+  pivot_longer(route1:route11,
+    names_to = "route_num",
+    values_to = "route",
+    values_drop_na = TRUE)
 
+# distinct stations serve A train
+clean_sub_stat_df %>%
+  filter(route == "A") %>% 
+  distinct(station_name, line)
+
+# distinct stations serve A train with ADA
+clean_sub_stat_df %>%
+   filter(route == "A", ada == "TRUE") %>% 
+  distinct(station_name, line)
+```
 
 ## Problem 2
 
@@ -97,10 +118,96 @@ trash_whl = rbind(
       trash_wheel = "prof_trash_wheel"
     )
   ) %>%
-  relocate(trash_wheel)
+  relocate(trash_wheel) %>%
+  select(-dumpster)
 
 trash_whl
+
+# calculate total weight of trash collected by Professor Trash Wheel
+prof_trash_weight = sum(
+  trash_whl %>%
+  filter(trash_wheel == 'prof_trash_wheel') %>%
+  select(weight_tons)
+  )
+
+# calculate total number of sports balls collected by Mr. Trash Wheel in 2020
+mr_sports_ball_2020 = sum(
+  trash_whl %>%
+  filter(trash_wheel == 'mr_trash_wheel', year == 2020) %>%
+  select(sports_balls)
+)
+```
+This data set displays the trash record collected by `Mr. Trash Wheel` and `Professor Trash Wheel` in every dumpster.
+The combined data set is ``r nrow(trash_whl)``×``r ncol(trash_whl)``.
+
+
+Mr and Professor Trash Wheel have collected ``r sum(select(trash_whl, weight_tons))`` tons of trash in total.
+
+So far, Professor Trash Wheel has collected ``r prof_trash_weight`` tons of trash.
+
+Mr. Trash Wheel has totally collected ``r mr_sports_ball_2020`` sports balls in 2020.
+
+## Problem 3
+
+```{r clean_pols_month_data}
+# First, clean the data in pols-month.csv.
+pols_df = read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>%
+  janitor::clean_names() %>%
+  separate(col = mon, into = c("year", "month", "day"), sep = "-", convert = TRUE) %>%
+  arrange(year, month) %>%
+  mutate(
+    month = month.name[.$month],
+    president = ifelse(prez_gop, "gop", "dem") )%>%
+    select(-day, -prez_gop, -prez_dem) %>%
+  relocate(president, .after = month)
+
+pols_df
 ```
 
-The combined dataset is ``r nrow(trash_whl)``×``r ncol(trash_whl)``.
+```{r clean_snp_data}
+# Second, clean the data in snp.csv. 
+snp_df = read_csv("./data/fivethirtyeight_datasets/snp.csv")  %>%
+  janitor::clean_names() %>%
+  separate(date, into = c("month", "day","year"), sep = "/", convert = TRUE) %>%
+  mutate(year = ifelse(year>22, year + 1900, year + 2000)) %>%
+  arrange(year, month) %>%
+  mutate(month = month.name[.$month]) %>%
+  select(-day) %>%
+  relocate(year, month)
 
+snp_df
+```
+
+```{r clean_unemployment_data}
+# Third, clean the data in unemployment.csv.
+unemploy_df = read_csv(
+  "./data/fivethirtyeight_datasets/unemployment.csv",
+  skip = 1,
+  col_names = c("year", 1:12)) %>%
+  pivot_longer("1":"12", names_to = "month", values_to = "perc_of_unem", names_transform = list(month = as.numeric)) %>%
+  arrange(year, month) %>%
+  mutate(month = month.name[.$month]) 
+
+unemploy_df
+```
+
+```{r join_dfs}
+# Inner join 3 dfs
+join_df = pols_df %>%
+  inner_join(snp_df) %>%
+  inner_join(unemploy_df)
+
+join_df
+```
+
+The pols dataset contains ``r nrow(pols_df)`` records from ``r min(pols_df$year)`` to ``r max(pols_df$year)``.
+The data includes ``r ncol(pols_df)`` variables, they are ``r colnames(pols_df)``. 
+
+The snp dataset contains ``r nrow(snp_df)`` records from ``r min(snp_df$year)`` to ``r max(snp_df$year)``.
+The data includes ``r ncol(snp_df)`` variables, they are ``r colnames(snp_df)``. 
+
+The unemployment dataset contains ``r nrow(unemploy_df)`` records from ``r min(unemploy_df$year)`` to ``r max(unemploy_df$year)``.
+The data includes ``r ncol(unemploy_df)`` variables, they are ``r colnames(unemploy_df)``. 
+
+After inner joining, the joined dataset contains ``r nrow(join_df)`` records from ``r min(join_df$year)`` to ``r max(join_df$year)``.
+The data includes ``r ncol(join_df)`` variables, they are ``r colnames(join_df)``. 

@@ -81,7 +81,7 @@ clean_sub_stat_df %>%
 ```{r import&clean_trash_data}
 library(readxl)
 mr_trash_whl = read_excel(
-  "./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx",
+  "./data/Trash Wheel Collection Data.xlsx",
   sheet = 1,
   range = cell_cols("A:N"),
   skip = 1,
@@ -94,16 +94,16 @@ mr_trash_whl = read_excel(
   )
 
 prof_trash_whl = read_excel(
-  "./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx",
+  "./data/Trash Wheel Collection Data.xlsx",
   sheet = 2,
-  range = cell_cols("A:N"),
+  range = cell_cols("A:M"),
   skip = 1,
   na = ""
   ) %>%
   janitor::clean_names() %>%
   drop_na() %>%
   mutate(
-    sports_balls = as.integer(sports_balls)
+    sports_balls = NA
   )
 ```
 
@@ -123,6 +123,13 @@ trash_whl = rbind(
 
 trash_whl
 
+# calculate total weight of trash collected by Mr. Trash Wheel
+mr_trash_weight = sum(
+  trash_whl %>%
+  filter(trash_wheel == 'mr_trash_wheel') %>%
+  select(weight_tons)
+  )
+
 # calculate total weight of trash collected by Professor Trash Wheel
 prof_trash_weight = sum(
   trash_whl %>%
@@ -140,12 +147,17 @@ mr_sports_ball_2020 = sum(
 This data set displays the trash record collected by `Mr. Trash Wheel` and `Professor Trash Wheel` in every dumpster.
 The combined data set is ``r nrow(trash_whl)``×``r ncol(trash_whl)``.
 
+Each record in the combined data set represents a dumpster collected by a trash wheel.
+Among ``r nrow(trash_whl)`` dumpsters, ``r nrow(filter(trash_whl, trash_wheel == 'mr_trash_wheel'))`` dumpsters come from Mr. Trash Wheel, and ``r nrow(filter(trash_whl, trash_wheel == 'prof_trash_wheel'))`` dumpsters come from Professor Trash Wheel.
 
-Mr and Professor Trash Wheel have collected ``r sum(select(trash_whl, weight_tons))`` tons of trash in total.
+The variables in the combined data set are ``r colnames(trash_whl)``.
+Variable `trash_wheel` introduces which trash wheel the record comes from.
+Variable `month, year, date` introduces the date of dumpster.
+The rest variables introduce the statistical information of each dumpster.
 
-So far, Professor Trash Wheel has collected ``r prof_trash_weight`` tons of trash.
+Mr and Professor Trash Wheel have collected ``r sum(select(trash_whl, weight_tons))`` tons of trash in total. Among them, Mr. Trash Wheel has collected ``r mr_trash_weight`` tons of trash, and Professor Trash Wheel has collected ``r prof_trash_weight`` tons of trash.
 
-Mr. Trash Wheel has totally collected ``r mr_sports_ball_2020`` sports balls in 2020.
+Mr. Trash Wheel has totally collected ``r mr_sports_ball_2020`` sports balls in `2020`.
 
 ## Problem 3
 

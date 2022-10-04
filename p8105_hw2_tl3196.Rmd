@@ -77,6 +77,7 @@ clean_sub_stat_df %>%
 ```
 
 ## Problem 2
+Import datasets from `Trash Wheel Collection Data.xlsx` file, and clean them.
 
 ```{r import&clean_trash_data}
 library(readxl)
@@ -106,6 +107,8 @@ prof_trash_whl = read_excel(
     sports_balls = NA
   )
 ```
+
+Add a column `trash_wheel` to keep track of the dumpster comes from which trash wheel, and combine two datasets to the new dataset `trash_whl`.
 
 ```{r combine_df}
 trash_whl = rbind(
@@ -151,8 +154,8 @@ Each record in the combined data set represents a dumpster collected by a trash 
 Among ``r nrow(trash_whl)`` dumpsters, ``r nrow(filter(trash_whl, trash_wheel == 'mr_trash_wheel'))`` dumpsters come from Mr. Trash Wheel, and ``r nrow(filter(trash_whl, trash_wheel == 'prof_trash_wheel'))`` dumpsters come from Professor Trash Wheel.
 
 The variables in the combined data set are ``r colnames(trash_whl)``.
-Variable `trash_wheel` introduces which trash wheel the record comes from.
-Variable `month, year, date` introduces the date of dumpster.
+Variable `trash_wheel` indicates which trash wheel the record comes from.
+Variable `month, year, date` introduces the date of a dumpster.
 The rest variables introduce the statistical information of each dumpster.
 
 Mr and Professor Trash Wheel have collected ``r sum(select(trash_whl, weight_tons))`` tons of trash in total. Among them, Mr. Trash Wheel has collected ``r mr_trash_weight`` tons of trash, and Professor Trash Wheel has collected ``r prof_trash_weight`` tons of trash.
@@ -160,6 +163,7 @@ Mr and Professor Trash Wheel have collected ``r sum(select(trash_whl, weight_ton
 Mr. Trash Wheel has totally collected ``r mr_sports_ball_2020`` sports balls in `2020`.
 
 ## Problem 3
+First, clean the data in pols-month.csv.
 
 ```{r clean_pols_month_data}
 # First, clean the data in pols-month.csv.
@@ -177,6 +181,8 @@ pols_df = read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>%
 pols_df
 ```
 
+Second, clean the data in snp.csv. 
+
 ```{r clean_snp_data}
 # Second, clean the data in snp.csv. 
 snp_df = read_csv("./data/fivethirtyeight_datasets/snp.csv")  %>%
@@ -190,6 +196,8 @@ snp_df = read_csv("./data/fivethirtyeight_datasets/snp.csv")  %>%
 
 snp_df
 ```
+
+Third, clean the data in unemployment.csv.
 
 ```{r clean_unemployment_data}
 # Third, clean the data in unemployment.csv.
@@ -211,13 +219,15 @@ unemploy_df =
 unemploy_df
 ```
 
-```{r join_dfs}
-# Inner join 3 dfs
-join_df = pols_df %>%
+Left join 3 dfs.
+
+```{r left_join_dfs}
+# Left join 3 dfs
+left_join_df = pols_df %>%
   left_join(snp_df) %>%
   left_join(unemploy_df)
 
-join_df
+left_join_df
 ```
 
 The pols dataset contains ``r nrow(pols_df)`` records from ``r min(pols_df$year)`` to ``r max(pols_df$year)``.
@@ -229,5 +239,21 @@ The data includes ``r ncol(snp_df)`` variables, they are ``r colnames(snp_df)``.
 The unemployment dataset contains ``r nrow(unemploy_df)`` records from ``r min(unemploy_df$year)`` to ``r max(unemploy_df$year)``.
 The data includes ``r ncol(unemploy_df)`` variables, they are ``r colnames(unemploy_df)``. 
 
-After left-joining, the joined dataset contains ``r nrow(join_df)`` records from ``r min(join_df$year)`` to ``r max(join_df$year)``.
-The data includes ``r ncol(join_df)`` variables, they are ``r colnames(join_df)``. 
+After left-joining, the joined dataset contains ``r nrow(left_join_df)`` records from ``r min(left_join_df$year)`` to ``r max(left_join_df$year)``.
+The dataset includes ``r ncol(left_join_df)`` variables, they are ``r colnames(left_join_df)``.
+
+The function `left_join` effectively helps merge datasets and maintain all the record of dates in the first dataset which is `pol_df`. 
+However, for the dates that do not exist in the last two datasets, the data in the column `close, perc_of_unem` remains `NA`, which is not good for subsequent use.
+Thus, try `inner_join` to join these three datasets.
+
+```{r inner_join_dfs}
+# Inner join 3 dfs
+inner_join_df = pols_df %>%
+  inner_join(snp_df) %>%
+  inner_join(unemploy_df)
+
+inner_join_df
+```
+
+After inner_joining, the joined dataset contains ``r nrow(inner_join_df)`` records from ``r min(inner_join_df$year)`` to ``r max(inner_join_df$year)``, which only contains records whose date exists in all three datasets.
+The dataset still includes ``r ncol(inner_join_df)`` variables, they are ``r colnames(inner_join_df)``. 

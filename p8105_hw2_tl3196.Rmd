@@ -157,7 +157,8 @@ pols_df = read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>%
   arrange(year, month) %>%
   mutate(
     month = month.name[.$month],
-    president = ifelse(prez_gop, "gop", "dem") )%>%
+    president = ifelse(prez_gop, "gop", "dem")
+  )%>%
     select(-day, -prez_gop, -prez_dem) %>%
   relocate(president, .after = month)
 
@@ -180,11 +181,18 @@ snp_df
 
 ```{r clean_unemployment_data}
 # Third, clean the data in unemployment.csv.
-unemploy_df = read_csv(
+unemploy_df = 
+  read_csv(
   "./data/fivethirtyeight_datasets/unemployment.csv",
   skip = 1,
   col_names = c("year", 1:12)) %>%
-  pivot_longer("1":"12", names_to = "month", values_to = "perc_of_unem", names_transform = list(month = as.numeric)) %>%
+  janitor::clean_names() %>%
+  pivot_longer(
+    "x1":"x12", 
+    names_to = "month", 
+    values_to = "perc_of_unem", 
+    names_prefix = "x",
+    names_transform = list(month = as.numeric)) %>%
   arrange(year, month) %>%
   mutate(month = month.name[.$month]) 
 
@@ -194,8 +202,8 @@ unemploy_df
 ```{r join_dfs}
 # Inner join 3 dfs
 join_df = pols_df %>%
-  inner_join(snp_df) %>%
-  inner_join(unemploy_df)
+  left_join(snp_df) %>%
+  left_join(unemploy_df)
 
 join_df
 ```
@@ -209,5 +217,5 @@ The data includes ``r ncol(snp_df)`` variables, they are ``r colnames(snp_df)``.
 The unemployment dataset contains ``r nrow(unemploy_df)`` records from ``r min(unemploy_df$year)`` to ``r max(unemploy_df$year)``.
 The data includes ``r ncol(unemploy_df)`` variables, they are ``r colnames(unemploy_df)``. 
 
-After inner joining, the joined dataset contains ``r nrow(join_df)`` records from ``r min(join_df$year)`` to ``r max(join_df$year)``.
+After left-joining, the joined dataset contains ``r nrow(join_df)`` records from ``r min(join_df$year)`` to ``r max(join_df$year)``.
 The data includes ``r ncol(join_df)`` variables, they are ``r colnames(join_df)``. 

@@ -89,10 +89,13 @@ mr_trash_whl = read_excel(
   na = ""
   ) %>%
   janitor::clean_names() %>%
-  drop_na() %>%
+  drop_na(dumpster) %>%
   mutate(
-    sports_balls = as.integer(sports_balls)
+    sports_balls = as.integer(sports_balls),
+    year = as.numeric(year)
   )
+
+mr_trash_whl
 
 prof_trash_whl = read_excel(
   "./data/Trash Wheel Collection Data.xlsx",
@@ -102,27 +105,30 @@ prof_trash_whl = read_excel(
   na = ""
   ) %>%
   janitor::clean_names() %>%
-  drop_na() %>%
+  drop_na(dumpster) %>%
   mutate(
-    sports_balls = NA
+    sports_balls = NA,
+    year = as.numeric(year)
   )
+
+prof_trash_whl
 ```
 
-Add a column `trash_wheel` to keep track of the dumpster comes from which trash wheel, and combine two datasets to the new dataset `trash_whl`.
+Add a column `trash_wheel` to keep track of the dumpster comes from which trash wheel, and full_join two datasets to the new dataset `trash_whl`.
 
 ```{r combine_df}
-trash_whl = rbind(
-  mr_trash_whl %>% 
-    mutate(
-      trash_wheel = "mr_trash_wheel"
-    ), 
-  prof_trash_whl %>% 
-    mutate(
-      trash_wheel = "prof_trash_wheel"
-    )
-  ) %>%
-  relocate(trash_wheel) %>%
-  select(-dumpster)
+trash_whl = 
+  full_join(
+    mr_trash_whl %>% 
+      mutate(
+        trash_wheel = "mr_trash_wheel"
+        ), 
+    prof_trash_whl %>% 
+      mutate(
+        trash_wheel = "prof_trash_wheel"
+        )
+    ) %>%
+  relocate(trash_wheel)
 
 trash_whl
 
